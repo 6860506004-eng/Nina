@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BST Visualizer - 6860506004</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --accent: #00cec9;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header Section */
+        .header {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            width: 100%;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 { margin: 0; color: var(--accent); font-size: 1.8rem; letter-spacing: 1px; }
+        .student-id { color: #94a3b8; font-size: 0.9rem; margin-top: 5px; }
+
+        /* Control Panel */
+        .controls {
+            background: var(--card);
+            padding: 1.2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 12px;
+            margin: -30px 0 2rem 0;
+            border: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        input {
+            padding: 12px 16px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2); }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-add { background: var(--primary); color: white; }
+        .btn-add:hover { background: #5b4bc4; transform: translateY(-1px); }
+        .btn-reset { background: transparent; color: #ff7675; border: 1px solid #ff7675; }
+        .btn-reset:hover { background: rgba(255, 118, 117, 0.1); }
+
+        /* Canvas Area */
+        #tree-canvas {
+            width: 95%;
+            max-width: 1000px;
+            height: 450px;
+            background: var(--card);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .node {
+            position: absolute;
+            width: 42px;
+            height: 42px;
+            background: var(--primary);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            z-index: 5;
+            box-shadow: 0 0 15px rgba(108, 92, 231, 0.4);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .connector {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0.4;
+            transform-origin: 0 0;
+            z-index: 1;
+        }
+
+        /* Result Cards */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            width: 95%;
+            max-width: 1000px;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 1.2rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--accent); text-transform: uppercase; }
+        .val-text { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: #e2e8f0; }
+
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Binary Search Tree Visualizer</h1>
+    <div class="student-id">Developer ID: 6860506004</div>
+</div>
+
+<div class="controls">
+    <input type="number" id="inputNode" placeholder="ป้อนตัวเลข...">
+    <button class="btn-add" onclick="handleAdd()">เพิ่ม Node</button>
+    <button class="btn-reset" onclick="handleReset()">Reset</button>
+</div>
+
+<div id="tree-canvas"></div>
+
+<div class="results-grid">
+    <div class="card">
+        <h3>Pre-order Traversal</h3>
+        <div id="preorder" class="val-text">-</div>
+    </div>
+    <div class="card">
+        <h3>In-order Traversal</h3>
+        <div id="inorder" class="val-text">-</div>
+    </div>
+    <div class="card">
+        <h3>Post-order Traversal</h3>
+        <div id="postorder" class="val-text">-</div>
+    </div>
+</div>
+
+<script>
+    class Node {
+        constructor(value) {
+            this.value = value;
+            this.left = null;
+            this.right = null;
+            this.x = 0;
+            this.y = 0;
+        }
+    }
+
+    let root = null;
+    const canvas = document.getElementById('tree-canvas');
+
+    function handleAdd() {
+        const input = document.getElementById('inputNode');
+        const val = parseInt(input.value);
+        if (isNaN(val)) return;
+
+        root = insert(root, val);
+        input.value = '';
+        render();
+    }
+
+    function insert(node, val) {
+        if (!node) return new Node(val);
+        if (val < node.value) node.left = insert(node.left, val);
+        else if (val > node.value) node.right = insert(node.right, val);
+        return node;
+    }
+
+    function handleReset() {
+        root = null;
+        render();
+    }
+
+    function render() {
+        canvas.innerHTML = '';
+        if (!root) {
+            updateTraversals();
+            return;
+        }
+        calculatePositions(root, canvas.offsetWidth / 2, 50, canvas.offsetWidth / 4);
+        drawLines(root);
+        drawNodes(root);
+        updateTraversals();
+    }
+
+    function calculatePositions(node, x, y, spacing) {
+        if (!node) return;
+        node.x = x;
+        node.y = y;
+        calculatePositions(node.left, x - spacing, y + 70, spacing / 1.8);
+        calculatePositions(node.right, x + spacing, y + 70, spacing / 1.8);
+    }
+
+    function drawLines(node) {
+        if (!node) return;
+        if (node.left) {
+            createLine(node.x, node.y, node.left.x, node.left.y);
+            drawLines(node.left);
+        }
+        if (node.right) {
+            createLine(node.x, node.y, node.right.x, node.right.y);
+            drawLines(node.right);
+        }
+    }
+
+    function createLine(x1, y1, x2, y2) {
+        const line = document.createElement('div');
+        line.className = 'connector';
+        const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+        line.style.width = length + 'px';
+        line.style.left = x1 + 'px';
+        line.style.top = y1 + 'px';
+        line.style.transform = `rotate(${angle}deg)`;
+        canvas.appendChild(line);
+    }
+
+    function drawNodes(node) {
+        if (!node) return;
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.style.left = (node.x - 21) + 'px';
+        div.style.top = (node.y - 21) + 'px';
+        div.innerText = node.value;
+        canvas.appendChild(div);
+        drawNodes(node.left);
+        drawNodes(node.right);
+    }
+
+    function updateTraversals() {
+        let pre = [], ino = [], post = [];
+        const traverse = (n) => {
+            if (!n) return;
+            pre.push(n.value);
+            traverse(n.left);
+            ino.push(n.value);
+            traverse(n.right);
+            post.push(n.value);
+        };
+        traverse(root);
+        document.getElementById('preorder').innerText = pre.join(', ') || '-';
+        document.getElementById('inorder').innerText = ino.join(', ') || '-';
+        document.getElementById('postorder').innerText = post.join(', ') || '-';
+    }
+
+    document.getElementById('inputNode').addEventListener('keypress', e => {
+        if (e.key === 'Enter') handleAdd();
+    });
+</script>
+
+</body>
+</html>
